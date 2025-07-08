@@ -65,7 +65,7 @@ def fast_relative_shift(a,b):
 
 fast_relative_shift= torch.vmap(torch.vmap(fast_relative_shift), in_dims=(0, None)) #https://johahi.github.io/blog/2024/fast-relative-shift/
 
-
+# changed it using Claude on 7-8-25 in order to be able to extract the representations
 class Attention(nn.Module):
     
     def __init__(
@@ -82,6 +82,7 @@ class Attention(nn.Module):
         super().__init__()
         self.scale = dim_key ** -0.5
         self.heads = heads
+        self.dim_value = dim_value  # Store this for easier access
 
         self.to_q = nn.Linear(dim, dim_key * heads, bias = False)
         self.to_k = nn.Linear(dim, dim_key * heads, bias = False)
@@ -92,19 +93,46 @@ class Attention(nn.Module):
         nn.init.zeros_(self.to_out.bias)
 
         # relative positional encoding
-
         self.num_rel_pos_features = num_rel_pos_features
         
-        self.register_buffer("positions",get_positional_embed(4096, self.num_rel_pos_features, self.to_v.weight.device), persistent = False) # 4096 as this should always be the seq len at this pos?
+        self.register_buffer("positions",get_positional_embed(4096, self.num_rel_pos_features, self.to_v.weight.device), persistent = False)
 
         self.to_rel_k = nn.Linear(num_rel_pos_features, dim_key * heads, bias = False)
         self.rel_content_bias = nn.Parameter(torch.randn(1, heads, 1, dim_key))
         self.rel_pos_bias = nn.Parameter(torch.randn(1, heads, 1, dim_key))
 
         # dropouts
-
         self.pos_dropout = nn.Dropout(pos_dropout)
         self.attn_dropout = nn.Dropout(dropout)
+
+        # NEW: Storage for intermediate values
+        self.store_intermediates = False
+        self.last_attention_weights = None  # For methods 1 & 3
+        self.last_value_vectors = None      # For method 1
+        self.last_head_outputs = None       # For method 3
+
+    def enable_intermediate_storage(self):
+        """Enable storage of attention weights and intermediate values"""
+        self.store_intermediates = True
+        
+    def disable_intermediate_storage(self):
+        """Disable storage to save memory"""
+        self.store_intermediates = False
+        self.last_attention_weights = None
+        self.last_value_vectors = None
+        self.last_head_outputs = None
+        
+    def get_attention_weights(self):
+        """Get stored attention weights [batch, heads, seq_len, seq_len]"""
+        return self.last_attention_weights
+        
+    def get_value_vectors(self):
+        """Get stored value vectors [batch, heads, seq_len, dim_value]"""
+        return self.last_value_vectors
+        
+    def get_head_outputs(self):
+        """Get per-head outputs before concatenation [batch, heads, seq_len, dim_value]"""
+        return self.last_head_outputs
 
     def forward(self, x):
         n, h, device = x.shape[-2], self.heads, x.device
@@ -123,11 +151,23 @@ class Attention(nn.Module):
         rel_k = self.to_rel_k(positions)
         rel_k = rearrange(rel_k, 'n (h d) -> h n d', h = h)
         rel_logits = fast_relative_shift(q + self.rel_pos_bias,rel_k)
+        
         logits = content_logits + rel_logits
         attn = logits.softmax(dim = -1)
+        
+        # NEW: Store intermediate values if requested
+        if self.store_intermediates:
+            self.last_attention_weights = attn.detach().clone()  # [batch, heads, seq_len, seq_len]
+            self.last_value_vectors = v.detach().clone()         # [batch, heads, seq_len, dim_value]
+        
         attn = self.attn_dropout(attn)
 
         out = einsum('b h i j, b h j d -> b h i d', attn, v)
+        
+        # NEW: Store per-head outputs before concatenation
+        if self.store_intermediates:
+            self.last_head_outputs = out.detach().clone()  # [batch, heads, seq_len, dim_value]
+        
         out = rearrange(out, 'b h n d -> b n (h d)')
         out = self.to_out(out)
         return out
