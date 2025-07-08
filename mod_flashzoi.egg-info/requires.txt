@@ -1,0 +1,12 @@
+einops>=0.5
+numpy>=1.14.2
+torch>=2.1.0
+transformers<4.51.0,>=4.34.1
+intervaltree~=3.1.0
+pandas
+
+[:extra == "dev"]
+jupyter>=1.0.0
+
+[:extra == "flash"]
+flash-attn>=2.6.3

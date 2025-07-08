@@ -1,0 +1,24 @@
+Metadata-Version: 2.4
+Name: mod-flashzoi
+Version: 0.4.3
+Summary: The Borzoi model from Linder et al., but in Pytorch - Modified version
+Home-page: https://github.com/khorms/mod_flashzoi
+Author: Johannes Hingerl
+Author-email: johannes.hingerl@tum.de
+License: LICENSE
+License-File: LICENSE
+Requires-Dist: einops>=0.5
+Requires-Dist: numpy>=1.14.2
+Requires-Dist: torch>=2.1.0
+Requires-Dist: transformers<4.51.0,>=4.34.1
+Requires-Dist: jupyter>=1.0.0; extra == "dev"
+Requires-Dist: intervaltree~=3.1.0
+Requires-Dist: pandas
+Requires-Dist: flash-attn>=2.6.3; extra == "flash"
+Dynamic: author
+Dynamic: author-email
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: summary

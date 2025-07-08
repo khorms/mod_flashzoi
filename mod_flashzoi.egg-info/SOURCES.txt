@@ -1,0 +1,16 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+mod_flashzoi/__init__.py
+mod_flashzoi/config_borzoi.py
+mod_flashzoi/gene_utils.py
+mod_flashzoi/pytorch_borzoi_helpers.py
+mod_flashzoi/pytorch_borzoi_model.py
+mod_flashzoi/pytorch_borzoi_transformer.py
+mod_flashzoi/pytorch_borzoi_utils.py
+mod_flashzoi.egg-info/PKG-INFO
+mod_flashzoi.egg-info/SOURCES.txt
+mod_flashzoi.egg-info/dependency_links.txt
+mod_flashzoi.egg-info/requires.txt
+mod_flashzoi.egg-info/top_level.txt

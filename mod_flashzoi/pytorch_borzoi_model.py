@@ -15,7 +15,7 @@
 
 
 
-from borzoi_pytorch.config_borzoi import BorzoiConfig
+from mod_flashzoi.config_borzoi import BorzoiConfig
 from transformers import PreTrainedModel
 import torch.nn as nn
 import torch
